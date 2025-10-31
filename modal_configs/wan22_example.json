@@ -1,0 +1,18 @@
+{
+  "task": "wan_t2v_14B",
+  "dit_path": "wan/wan_2.2_t2v_14B_low_noise_bf16.safetensors",
+  "dit_high_noise_path": "wan/wan_2.2_t2v_14B_high_noise_bf16.safetensors",
+  "timestep_boundary": 0.3,
+  "vae_path": "wan/wan_2.1_vae.safetensors",
+  "t5_path": "wan/models_t5_umt5-xxl-enc-bf16.pth",
+  "dataset_config": "my_dataset/config.toml",
+  "output_name": "my_wan22_lora",
+  "network_dim": 32,
+  "network_alpha": 16,
+  "learning_rate": "1e-4",
+  "optimizer_type": "adamw8bit",
+  "max_train_epochs": 10,
+  "save_every_n_epochs": 1,
+  "blocks_to_swap": 8,
+  "seed": 42
+}
