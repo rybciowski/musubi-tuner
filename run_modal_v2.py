@@ -66,7 +66,7 @@ MODEL_REGISTRY = {
         "cache_path": "wan/models_clip_open-clip-xlm-roberta-large-vit-huge-14.pth"
     },
 
-    # Wan 2.2 models
+    # Wan 2.2 models (bf16)
     "wan22_t2v_14b_low_bf16": {
         "repo_id": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
         "files": ["split_files/diffusion_models/wan_2.2_t2v_14B_low_noise_bf16.safetensors"],
@@ -76,6 +76,18 @@ MODEL_REGISTRY = {
         "repo_id": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
         "files": ["split_files/diffusion_models/wan_2.2_t2v_14B_high_noise_bf16.safetensors"],
         "cache_path": "wan/wan_2.2_t2v_14B_high_noise_bf16.safetensors"
+    },
+
+    # Wan 2.2 models (fp16)
+    "wan22_t2v_14b_low_fp16": {
+        "repo_id": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
+        "files": ["split_files/diffusion_models/wan2.2_t2v_low_noise_14B_fp16.safetensors"],
+        "cache_path": "wan/wan2.2_t2v_low_noise_14B_fp16.safetensors"
+    },
+    "wan22_t2v_14b_high_fp16": {
+        "repo_id": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
+        "files": ["split_files/diffusion_models/wan2.2_t2v_high_noise_14B_fp16.safetensors"],
+        "cache_path": "wan/wan2.2_t2v_high_noise_14B_fp16.safetensors"
     },
 
     # Qwen-Image models
@@ -443,11 +455,16 @@ def wan_train(config: dict):
         "--save_every_n_epochs", str(config.get("save_every_n_epochs", 1)),
         "--output_dir", output_dir,
         "--output_name", config["output_name"],
-        "--sdpa",
         "--gradient_checkpointing",
-        "--max_data_loader_n_workers", "2",
+        "--max_data_loader_n_workers", str(config.get("max_data_loader_n_workers", 2)),
         "--persistent_data_loader_workers",
     ]
+
+    # Attention mechanism: xformers or sdpa
+    if config.get("use_xformers", False):
+        cmd.append("--xformers")
+    else:
+        cmd.append("--sdpa")
 
     if clip_full:
         cmd.extend(["--clip", clip_full])
@@ -455,9 +472,57 @@ def wan_train(config: dict):
     if dit_high_full:
         cmd.extend(["--dit_high_noise", dit_high_full])
 
+    # Timestep parameters (for dual LoRA training)
+    if config.get("min_timestep") is not None:
+        cmd.extend(["--min_timestep", str(config["min_timestep"])])
+
+    if config.get("max_timestep") is not None:
+        cmd.extend(["--max_timestep", str(config["max_timestep"])])
+
     if config.get("timestep_boundary") is not None:
         cmd.extend(["--timestep_boundary", str(config["timestep_boundary"])])
 
+    if config.get("timestep_sampling"):
+        cmd.extend(["--timestep_sampling", config["timestep_sampling"]])
+
+    if config.get("discrete_flow_shift") is not None:
+        cmd.extend(["--discrete_flow_shift", str(config["discrete_flow_shift"])])
+
+    if config.get("preserve_distribution_shape"):
+        cmd.append("--preserve_distribution_shape")
+
+    # Optimizer parameters
+    if config.get("gradient_accumulation_steps"):
+        cmd.extend(["--gradient_accumulation_steps", str(config["gradient_accumulation_steps"])])
+
+    if config.get("optimizer_args"):
+        cmd.extend(["--optimizer_args", config["optimizer_args"]])
+
+    if config.get("max_grad_norm") is not None:
+        cmd.extend(["--max_grad_norm", str(config["max_grad_norm"])])
+
+    # Learning rate scheduler parameters
+    if config.get("lr_scheduler"):
+        cmd.extend(["--lr_scheduler", config["lr_scheduler"]])
+
+    if config.get("lr_scheduler_power"):
+        cmd.extend(["--lr_scheduler_power", str(config["lr_scheduler_power"])])
+
+    if config.get("lr_scheduler_min_lr_ratio"):
+        cmd.extend(["--lr_scheduler_min_lr_ratio", str(config["lr_scheduler_min_lr_ratio"])])
+
+    # Weighting scheme
+    if config.get("weighting_scheme"):
+        cmd.extend(["--weighting_scheme", config["weighting_scheme"]])
+
+    # Metadata
+    if config.get("metadata_title"):
+        cmd.extend(["--metadata_title", config["metadata_title"]])
+
+    if config.get("metadata_author"):
+        cmd.extend(["--metadata_author", config["metadata_author"]])
+
+    # Memory optimization
     if config.get("blocks_to_swap"):
         cmd.extend(["--blocks_to_swap", str(config["blocks_to_swap"])])
 
@@ -467,6 +532,7 @@ def wan_train(config: dict):
     if config.get("fp8_llm"):
         cmd.append("--fp8_llm")
 
+    # Other
     if config.get("seed"):
         cmd.extend(["--seed", str(config["seed"])])
 

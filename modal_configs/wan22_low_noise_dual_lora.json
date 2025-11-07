@@ -1,0 +1,48 @@
+{
+  "_comment": "WAN 2.2 LOW-NOISE LoRA Training (timesteps 0-875)",
+  "_tutorial": "Dual LoRA training - Train HIGH and LOW separately, use both together",
+
+  "task": "t2v-A14B",
+  "dit_path": "wan/wan2.2_t2v_low_noise_14B_fp16.safetensors",
+  "vae_path": "wan/wan_2.1_vae.safetensors",
+  "t5_path": "wan/models_t5_umt5-xxl-enc-bf16.pth",
+  "clip_path": "wan/models_clip_open-clip-xlm-roberta-large-vit-huge-14.pth",
+
+  "dataset_config": "wan_dataset/config.toml",
+  "output_name": "my_character_low_noise",
+
+  "network_dim": 16,
+  "network_alpha": 16,
+
+  "learning_rate": "3e-4",
+  "optimizer_type": "adamw",
+  "optimizer_args": "weight_decay=0.1",
+  "max_grad_norm": 0,
+
+  "gradient_checkpointing": true,
+  "gradient_accumulation_steps": 1,
+  "max_data_loader_n_workers": 2,
+
+  "timestep_sampling": "shift",
+  "discrete_flow_shift": 1.0,
+  "min_timestep": 0,
+  "max_timestep": 875,
+  "preserve_distribution_shape": true,
+
+  "lr_scheduler": "polynomial",
+  "lr_scheduler_power": 8,
+  "lr_scheduler_min_lr_ratio": "5e-5",
+
+  "max_train_epochs": 100,
+  "save_every_n_epochs": 100,
+
+  "mixed_precision": "fp16",
+  "fp8_base": true,
+  "use_xformers": true,
+  "blocks_to_swap": 8,
+
+  "seed": 5,
+
+  "metadata_title": "WAN2.2-LowNoise_MyCharacter",
+  "metadata_author": "YourName"
+}
